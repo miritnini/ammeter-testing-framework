@@ -1,0 +1,259 @@
+Ammeter Testing & Analysis System
+
+Overview
+This project is a complete Ammeter testing, analysis, and visualization framework.
+It simulates or collects measurements from multiple ammeters, analyzes their performance, and provides statistical comparison and a live dashboard.
+
+The system includes:
+    * Automated test execution
+    * Statistical analysis (accuracy, consistency, error rate)
+    * Visualization of current measurements
+    * Streamlit dashboard for real-time results
+    * Logging system for debugging and traceability
+
+1. Installation:
+pip install numpy pandas matplotlib streamlit pyyaml pytest
+pip install -r requirements.txt
+
+2. Running the system:
+        python main.py
+        pytest -s --json-report --json-report-file=results/pytest_results.json
+        python run_analysis.py
+        streamlit run ui/app.py
+
+- python main.py
+Runs the full end-to-end testing pipeline.
+    * Executes the AmmeterTestFramework for all configured devices
+    * Collects raw measurement samples from each ammeter
+    * Computes statistical metrics (mean, median, std, min, max, etc.)
+    * Runs the Orchestrator to normalize and process results
+    * Saves final output to results.json
+    * Generates and saves per-ammeter measurement plots
+Output:
+A complete execution of data collection + processing + visualization.
+
+Execution Flow:
+                AmmeterTestFramework
+                        ↓
+                Orchestrator
+                        ↓
+                AccuracyAssessment
+                        ↓
+                save_raw_plots()
+                        ↓
+                results.json generated
+
+What happens:
+    Loads all ammeters from config
+    Runs sampling loop per device
+    Collects raw measurements
+    Normalizes results
+    Saves plots per ammeter
+    Outputs structured JSON file
+
+
+- Pytest:
+pytest -s --json-report --json-report-file=results/pytest_results.json
+Runs all automated unit tests for the project.
+    * Executes test suite for framework, analysis, and orchestrator logic
+    * Prints live test output to the console (-s)
+    * Generates a structured JSON test report
+Saves results to: results/pytest_results.json
+Output:
+Validation report of system correctness (pass/fail per test).
+
+Execution Flow:
+                test_framework tests
+                        ↓
+                analysis tests
+                        ↓
+                orchestrator tests
+                        ↓
+                pytest_report.json
+
+What happens:
+    Validates:
+        framework logic
+        analysis correctness
+        edge cases (empty results, failures)
+    Ensures pipeline stability
+    Generates structured test report
+
+
+- Analysis:
+python run_analysis.py
+Runs only the data analysis phase on already collected results.
+    * Loads existing measurement data
+    * Computes statistical metrics:
+    * mean
+    * median
+    * standard deviation
+    * accuracy score
+    * Ranks all ammeters by performance
+    * Generates comparison tables
+    * Saves output to analysis_results.json
+Output:
+Analytical results without re-running measurements.
+
+Execution Flow:
+                results.json
+                        ↓
+                AccuracyAssessment
+                        ↓
+                statistical computation
+                        ↓
+                ranking calculation
+                        ↓
+                analysis_results.json
+
+What happens:
+    Loads existing measurement data
+    Computes statistical metrics
+    Calculates accuracy scores
+    Ranks ammeters
+    Saves analysis output
+
+
+- UI Dashboard:
+streamlit run ui/app.py
+Launches an interactive web-based dashboard.
+* Loads processed JSON results
+* Displays:
+    Accuracy comparison table
+    Performance ranking
+    Measurement graphs (raw samples)
+    Pytest results
+    Analysis outputs
+* Provides real-time visual inspection of system results
+Output:
+A fully interactive dashboard in the browser.
+
+Execution Flow:
+                results.json + analysis_results.json + pytest_results.json
+                        ↓
+                Streamlit UI layer
+                        ↓
+                charts + tables + plots
+
+What happens:
+    Loads all generated outputs
+    Builds dashboard UI
+    Displays:
+    performance comparison
+    raw signal graphs
+    ranking results
+    test validation results
+
+Overall System Flow (End-to-End)
+                                        ┌────────────────────┐
+                                        │  main.py execution │
+                                        └─────────┬──────────┘
+                                                  ↓
+                                     AmmeterTestFramework (data collection)
+                                                  ↓
+                                         Orchestrator (coordination)
+                                                  ↓
+                                     AccuracyAssessment (analysis)
+                                                  ↓
+                                        results.json + plots
+                                                  ↓
+                                  ┌────────────────────────────┐
+                                  │   Streamlit Dashboard      │
+                                  └────────────────────────────┘
+                                                  ↑
+                                         pytest validation layer
+
+
+Final Project Structure:
+                        Test_QA_expanded/
+                        │
+                        ├── main.py                      # Runs full system pipeline (data collection + analysis + plots)
+                        ├── run_analysis.py             # Runs statistical analysis only on existing data
+                        ├── pytest.ini
+                        ├── tests/                      # Pytest test suite
+                        │   ├── conftest.py             # # Shared pytest fixtures and test configuration (setup/teardown, shared objects like framework/orchestrator)
+                        │   ├── test_analysis.py
+                        │   └── test_orchestrator.py
+                        │
+                        ├── config/
+                        │   └── config.yaml             # Device + sampling configuration
+                        │
+                        ├── ammeters/                   # Device layer (sensor implementations)
+                        │   ├── base_ammeter.py
+                        │   ├── circuitor.py
+                        │   ├── entes.py
+                        │   └── greenlee.py
+                        │
+                        ├── src/
+                        │   │
+                        │   ├── testing/                # Core system logic
+                        │   │   ├── test_framework.py   # Data acquisition engine
+                        │   │   ├── orchestrator.py     # Pipeline controller
+                        │   │   ├── accuracy_assessment.py  # Statistical analysis + scoring + plots
+                        │   │   ├── error_manager.py    # Error handling + classification
+                        │   │   └── error_simulator.py  # Injects simulated noise/errors
+                        │   │
+                        │   ├── utils/                  # Infrastructure utilities
+                        │   │   ├── logger.py           # Central logging system
+                        │   │   ├── config.py           # YAML loader
+                        │   │   └── utils.py            # Helper functions (random, etc.)
+                        │   │
+                        │   └── config/
+                        │       └── constants.py        # Shared constants across system
+                        │
+                        ├── ui/
+                        │   └── app.py                  # Streamlit dashboard (visualization layer)
+                        │
+                        ├── results/                   # Output folder (generated at runtime)
+                        │   ├── results.json
+                        │   ├── analysis_results.json
+                        │   ├── pytest_results.json
+                        │   ├── logs/
+                        │   ├── plots/                 # per-ammeter graphs
+                        │   └── *_plot.png
+                        │
+                        └── README.md
+
+
+Fixed Issues:
+
+1. main- port issue:
+EntesAmmeter is running on port 5002
+GreenleeAmmeter is running on port 5001
+CircutorAmmeter is running on port 5003
+according to ReadMe:
+EntesAmmeter is running on port 5001
+GreenleeAmmeter is running on port 5000
+CircutorAmmeter is running on port 5002
+
+Errors while trying to run tests
+2. no init , so it is not consider as a package- import is not working
+
+3. test_framework -> missing import for Dict
+
+4. run_tests -> AmmeterTestFramework.run_test() missing 1 required positional argument: 'ammeter_type'
+
+5. missing return results in run_tests
+
+6. missing printing the actual result in run_tests
+
+7. test_framework - AmmeterTestFramework doesn't return result so all results are none, no logic
+
+8. no return value in client
+
+9. threads are stopping once main is over - needs to add while to keep it alive
+
+10. test_framework: "circutor": (5002, b"MEASURE_CIRCUTOR -get_measurement"),
+while in CircutorAmmeter.py: b'MEASURE_CIRCUTOR -get_measurement -current'
+client send:
+MEASURE_CIRCUTOR -get_measurement
+server expect:
+MEASURE_CIRCUTOR -get_measurement -current
+not equal so if condition is not satisfied and it is returning None.
+
+11. activate ammeters in config.yaml file and use it in test_framework instead of hardcoding the ammeters
+
+12. in config.yaml - add values to samples and use them in test_framework instead of hardcoding the samples
+
+13. install pytest and use it to run the tests instead of manually running the test_framework
+
