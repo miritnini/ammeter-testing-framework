@@ -2,9 +2,7 @@ import threading
 import time
 import json
 import os
-
-from utils.config import load_config
-
+from src.utils.config import load_config
 from ammeters.Greenlee_Ammeter import GreenleeAmmeter
 from ammeters.Entes_Ammeter import EntesAmmeter
 from ammeters.Circutor_Ammeter import CircutorAmmeter

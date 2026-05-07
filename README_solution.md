@@ -20,6 +20,7 @@ It simulates or collects measurements from multiple ammeters, analyzes their per
 ```bash
 pip install numpy pandas matplotlib streamlit pyyaml pytest
 pip install -r requirements.txt
+pip install pytest-json-report
 ```
 
 ---
@@ -92,7 +93,7 @@ pytest report
 ### 📊 3. Run Analysis Only
 
 ```bash
-python run_analysis.py
+python -m src.run_analysis
 ```
 
 **What it does:**

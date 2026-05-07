@@ -14,11 +14,12 @@ The system includes:
 1. Installation:
 pip install numpy pandas matplotlib streamlit pyyaml pytest
 pip install -r requirements.txt
+pytest -s --json-report --json-report-file=results/pytest_results.json
 
 2. Running the system:
         python main.py
         pytest -s --json-report --json-report-file=results/pytest_results.json
-        python run_analysis.py
+        python -m src.run_analysis
         streamlit run ui/app.py
 
 - python main.py
