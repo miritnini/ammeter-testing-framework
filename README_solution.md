@@ -210,6 +210,15 @@ Test_QA_expanded/
 │   │   ├── error_manager.py
 │   │   └── error_simulator.py
 │   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── ammeter_result.py
+│   │   ├── analysis_model.py
+│   │   ├── error_models.py
+│   │   ├── pipeline_output.py
+│   │   ├── sensor_model.py
+│   │   └── statistics_model.py
+│   │
 │   ├── utils/
 │   │   ├── logger.py
 │   │   ├── config.py
