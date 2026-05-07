@@ -5,9 +5,6 @@ import os
 
 from src.utils.logger import AppLogger
 from src.config.constants import (
-    AMMETER,
-    SAMPLES,
-    ERRORS,
     MEAN,
     STD,
     MIN,
@@ -21,35 +18,45 @@ from src.config.constants import (
     RANKING,
 )
 
+
 class AccuracyAssessment:
 
     def __init__(self):
         self.logger = AppLogger("AccuracyAssessment")
 
-    # ---------------------------
-    # MAIN COMPARISON ENGINE
-    # ---------------------------
+    # =========================================================
+    # MAIN COMPARISON ENGINE (OOP VERSION)
+    # =========================================================
     def compare_ammeters(self, results):
+        """
+        Compare normalized ammeter results and generate metrics:
+        mean, std, min, max, coefficient of variation, range, error rate, accuracy score
+        """
 
         self.logger.info("Starting ammeter comparison")
-        metrics = {}
-        for r in results:
-            ammeter = r[AMMETER]
-            self.logger.info(f"Processing {ammeter}")
-            samples = np.array(r.get(SAMPLES, []), dtype=float)
 
-            if len(samples) == 0:
+        metrics = {}
+
+        for r in results:
+
+            ammeter = r.ammeter
+            self.logger.info(f"Processing {ammeter}")
+
+            samples = np.array(r.samples, dtype=float)
+
+            if samples.size == 0:
                 self.logger.warning(f"{ammeter} has no samples")
                 continue
 
-            mean = np.mean(samples)
-            std = np.std(samples, ddof=1) if len(samples) > 1 else 0
-            min_v = np.min(samples)
-            max_v = np.max(samples)
+            mean = float(np.mean(samples))
+            std = float(np.std(samples, ddof=1)) if len(samples) > 1 else 0.0
+            min_v = float(np.min(samples))
+            max_v = float(np.max(samples))
 
             cv = std / (mean + 1e-9)
             value_range = max_v - min_v
-            error_rate = r.get(ERRORS, 0) / max(len(samples), 1)
+            error_rate = r.errors / max(len(samples), 1)
+
             accuracy_score = 1 / (
                 (std + 1e-6) *
                 (1 + cv) *
@@ -85,6 +92,7 @@ class AccuracyAssessment:
 
         most_reliable = df.index[0]
         ranking = df[ACCURACY_SCORE].to_dict()
+
         self.logger.info(f"Most reliable ammeter: {most_reliable}")
 
         return {
@@ -93,12 +101,16 @@ class AccuracyAssessment:
             RANKING: ranking
         }
 
-    # ---------------------------
+    # =========================================================
     # VISUALIZATION
-    # ---------------------------
+    # =========================================================
     def plot_comparison(self, df):
+        """
+        Plot the accuracy scores for all ammeters
+        """
 
         self.logger.info("Generating comparison plot")
+
         if df is None or df.empty:
             self.logger.warning("Empty dataframe - no plot generated")
             return None
@@ -110,38 +122,40 @@ class AccuracyAssessment:
         ax.set_xlabel("Ammeter")
         ax.set_ylabel("Accuracy Score")
         fig.tight_layout()
+
         self.logger.info("Plot generated successfully")
         return fig
 
-    # ---------------------------
-    # SAVE RAW PLOTS
-    # ---------------------------
+    # =========================================================
+    # SAVE RAW SIGNAL PLOTS
+    # =========================================================
     def save_raw_plots(self, results, save_dir="results"):
+        """
+        Save raw sample plots for all ammeters
+        """
 
         self.logger.info(f"Saving raw plots to {save_dir}")
         os.makedirs(save_dir, exist_ok=True)
-        def is_valid_result(r):
-            return (
-                    r.get(AMMETER) is not None
-                    and isinstance(r.get(SAMPLES), list)
-                    and len(r.get(SAMPLES)) > 0
-            )
 
-        valid_results = list(filter(is_valid_result, results))
+        # Use .samples since results are NormalizedAmmeterResult
+        valid_results = [
+            r for r in results
+            if r.ammeter and len(r.samples) > 0
+        ]
+
         if not valid_results:
             self.logger.warning("No valid results to plot")
             return
 
         for r in valid_results:
-            ammeter = r.get(AMMETER)
-            samples = r.get(SAMPLES)
             fig, ax = plt.subplots(figsize=(5, 3))
-            ax.plot(samples, marker="o", linewidth=1)
-            ax.set_title(f"{ammeter} - Current Measurements")
+            ax.plot(r.samples, marker="o", linewidth=1)
+            ax.set_title(f"{r.ammeter} - Current Measurements")
             ax.set_xlabel("Sample")
             ax.set_ylabel("Value")
             fig.tight_layout()
-            file_path = os.path.join(save_dir, f"{ammeter}_plot.png")
+
+            file_path = os.path.join(save_dir, f"{r.ammeter}_plot.png")
             fig.savefig(file_path, dpi=120)
             plt.close(fig)
             self.logger.info(f"Saved plot: {file_path}")

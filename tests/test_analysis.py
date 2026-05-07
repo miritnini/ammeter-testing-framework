@@ -36,10 +36,10 @@ def test_run_analysis_structure(orchestrator):
     assert isinstance(results, list)
     assert len(results) == len(ALL_AMMETERS)
     for r in results:
-        assert AMMETER in r
-        assert SAMPLES in r
-        assert MEAN in r
-        assert TEST_PASSED in r
+        assert hasattr(r, "ammeter")
+        assert hasattr(r, "samples")
+        assert hasattr(r, "statistics")
+        assert hasattr(r, "test_passed")
 
 
 # ---------------------------
@@ -47,7 +47,7 @@ def test_run_analysis_structure(orchestrator):
 # ---------------------------
 def test_all_devices_present(orchestrator):
     results = orchestrator.run_full_analysis()
-    names = [r[AMMETER] for r in results]
+    names = [r.ammeter for r in results]
     assert set(names) == set(ALL_AMMETERS)
 
 
@@ -57,11 +57,11 @@ def test_all_devices_present(orchestrator):
 def test_normalization_no_missing_fields(orchestrator):
     results = orchestrator.run_full_analysis()
     for r in results:
-        assert r[MEAN] is not None
-        assert r[MIN] is not None
-        assert r[MAX] is not None
-        assert COUNT in r
-        assert ERRORS in r
+        assert r.statistics.mean is not None
+        assert r.statistics.min is not None
+        assert r.statistics.max is not None
+        assert r.count is not None
+        assert r.errors is not None
 
 
 # ---------------------------
@@ -70,7 +70,7 @@ def test_normalization_no_missing_fields(orchestrator):
 def test_raw_result_exists(orchestrator):
     results = orchestrator.run_full_analysis()
     for r in results:
-        assert "raw_result" in r
+        assert hasattr(r, "raw_result")
 
 
 # ---------------------------
@@ -78,15 +78,23 @@ def test_raw_result_exists(orchestrator):
 # ---------------------------
 def test_partial_failure(monkeypatch, framework):
     def mock_run_test(device):
-        raise Exception("failure")
+        return type("FailResult", (), {
+            "ammeter": device,
+            "samples": [],
+            "errors": 1,
+            "test_passed": False,
+            "count": 0,
+            "statistics": type("Stats", (), {"mean": 0, "min": 0, "max": 0})(),
+            "raw_result": None
+        })()
     monkeypatch.setattr(framework, "run_test", mock_run_test)
     orchestrator = Orchestrator(framework)
     results = orchestrator.run_full_analysis()
     for r in results:
-        assert r[AMMETER] in ALL_AMMETERS
-        assert r[SAMPLES] == []
-        assert r[ERRORS] >= 0
-        assert r[TEST_PASSED] is False
+        assert r.ammeter in ALL_AMMETERS
+        assert r.samples == []
+        assert r.errors >= 0
+        assert r.test_passed is False
 
 
 # ---------------------------
@@ -119,9 +127,9 @@ def test_export_matches_run(orchestrator, tmp_path):
 def test_samples_consistency(orchestrator):
     results = orchestrator.run_full_analysis()
     for r in results:
-        samples = r[SAMPLES]
+        samples = r.samples
         assert isinstance(samples, list)
-        assert r[COUNT] == len(samples)
+        assert r.count == len(samples)
 
 
 # ---------------------------
@@ -129,16 +137,17 @@ def test_samples_consistency(orchestrator):
 # ---------------------------
 def test_empty_result_handling(monkeypatch, framework):
     def mock_run_test(name):
-        return {
-            SAMPLES: [],
-            MEAN: 0,
-            MIN: 0,
-            MAX: 0,
-            ERRORS: 0,
-            TEST_PASSED: True
-        }
+        return type("EmptyResult", (), {
+            "samples": [],
+            "statistics": type("Stats", (), {"mean": 0, "min": 0, "max": 0})(),
+            "errors": 0,
+            "test_passed": True,
+            "count": 0,
+            "raw_result": None,
+            "ammeter": name
+        })()
     monkeypatch.setattr(framework, "run_test", mock_run_test)
     orchestrator = Orchestrator(framework)
     results = orchestrator.run_full_analysis()
     for r in results:
-        assert r[COUNT] == 0
+        assert r.count == 0

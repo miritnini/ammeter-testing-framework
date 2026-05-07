@@ -1,27 +1,24 @@
 import random
-
+from src.models.error_models import ErrorSimulatorConfig
 
 class ErrorSimulator:
 
-    def __init__(self, config: dict):
-        self.noise_rate = config.get("noise_rate", 0.05)
-        self.spike_rate = config.get("spike_rate", 0.01)
-        self.drop_rate = config.get("drop_rate", 0.01)
+    def __init__(self, config: ErrorSimulatorConfig):
+        self.enabled = config.enabled
+        self.noise_rate = config.noise_rate
+        self.spike_rate = config.spike_rate
+        self.drop_rate = config.drop_rate
 
-    # ---------------------------
-    # MAIN ENTRY
-    # ---------------------------
     def inject(self, value: float) -> float:
+        if not self.enabled:
+            return value
 
-        #  missing reading
         if random.random() < self.drop_rate:
             raise ValueError("Simulated missing reading")
 
-        #  spike
         if random.random() < self.spike_rate:
             return value * random.uniform(3, 10)
 
-        #  noise
         if random.random() < self.noise_rate:
             return value + random.uniform(-5, 5)
 
